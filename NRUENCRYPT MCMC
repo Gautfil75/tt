@@ -1,0 +1,73 @@
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy.stats import norm
+import seaborn as sns
+
+# NTRU parameters
+N = 512  # Dimension of the lattice
+q = 12289  # Modulus
+sigma = 3.2  # Gaussian parameter
+
+# MCMC sampling implementation
+def mcmc_sampling(steps, N, sigma):
+    samples = []
+    current = np.random.normal(0, sigma, N)
+    
+    for _ in range(steps):
+        # Proposing a new point
+        proposed = current + np.random.normal(0, 0.1, N)
+        
+        # Calculating the acceptance ratio
+        ratio = np.exp(-np.sum(proposed**2)/(2*sigma**2) 
+                      + np.sum(current**2)/(2*sigma**2))
+        
+        # Metropolis-Hastings criterion
+        if np.random.random() < min(1, ratio):
+            current = proposed
+            
+        samples.append(np.linalg.norm(current))
+    
+    return np.array(samples)
+
+# Running the simulations
+steps = 10000
+samples = mcmc_sampling(steps, N, sigma)
+
+# Visualizing the results
+plt.figure(figsize=(12, 6))
+
+# Distribution of norms
+plt.subplot(121)
+sns.histplot(samples, kde=True)
+plt.title('Distribution of vector norms')
+plt.xlabel('Norm')
+plt.ylabel('Frequency')
+
+# Convergence of the chain
+plt.subplot(122)
+plt.plot(samples)
+plt.title('MCMC chain convergence')
+plt.xlabel('Iterations')
+plt.ylabel('Norm')
+
+plt.tight_layout()
+plt.show()
+
+# Security analysis
+def security_analysis(samples, N, q):
+    min_norm = np.min(samples)
+    max_norm = np.max(samples)
+    
+    # Estimating quantum security
+    quantum_security = np.sqrt(2**N / (np.pi**(N/2) * sigma**N))
+    
+    return {
+        'min_norm': min_norm,
+        'max_norm': max_norm,
+        'quantum_security': quantum_security
+    }
+
+security_metrics = security_analysis(samples, N, q)
+print("\nSecurity analysis:")
+for key, value in security_metrics.items():
+    print(f"{key}: {value:.2e}")
